@@ -1,9 +1,5 @@
 /****************************************************************************
- * arch/risc-v/src/k210/k210_clockconfig.c
- *
- * Derives from software originally provided by Canaan Inc
- *
- *   Copyright 2018 Canaan Inc
+ * arch/risc-v/src/k210/k210_spi.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -22,111 +18,66 @@
  *
  ****************************************************************************/
 
+#ifndef __ARCH_RISCV_SRC_K210_K210_SPI_H
+#define __ARCH_RISCV_SRC_K210_K210_SPI_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
 
-#include <stdint.h>
-#include <assert.h>
-#include <debug.h>
+#include <nuttx/spi/spi.h>
 
-#include <nuttx/arch.h>
-#include <arch/board/board.h>
-
-#include "riscv_arch.h"
-#include "k210_clockconfig.h"
+#include "chip.h"
+#include "hardware/k210_spi.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define OSC_FREQ 26000000
+#ifndef __ASSEMBLY__
 
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-static uint32_t g_cpu_clock = 416000000;
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: k210_get_cpuclk
- ****************************************************************************/
-
-uint32_t k210_get_cpuclk(void)
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C"
 {
-  return g_cpu_clock;
-}
-
-/****************************************************************************
- * Name: k210_get_pll0clk
- ****************************************************************************/
-
-#ifndef CONFIG_K210_WITH_QEMU
-uint32_t k210_get_pll0clk(void)
-{
-  uint32_t pll0;
-  uint32_t nr;
-  uint32_t nf;
-  uint32_t od;
-
-  pll0 = getreg32(K210_SYSCTL_PLL0);
-  nr   = PLL_CLK_R(pll0)  + 1;
-  nf   = PLL_CLK_F(pll0)  + 1;
-  od   = PLL_CLK_OD(pll0) + 1;
-
-  return OSC_FREQ / nr * nf / od;
-}
+#else
+#define EXTERN extern
 #endif
 
 /****************************************************************************
- * Name: k210_get_spiclk
+ * Public Data
  ****************************************************************************/
 
-#ifndef CONFIG_K210_WITH_QEMU
-uint32_t k210_get_spiclk(int n)
-{
-  uint32_t pll0 = k210_get_pll0clk();
-  return pll0 / 2; /* TODO */
-}
-#endif
+struct spi_dev_s;
 
 /****************************************************************************
- * Name: k210_clockconfig
+ * Public Function Prototypes
  ****************************************************************************/
 
-void k210_clockconfig(void)
-{
-#ifndef CONFIG_K210_WITH_QEMU
-  uint32_t clksel0;
+/****************************************************************************
+ * Name: k210_spibus_initialize
+ ****************************************************************************/
 
-  /* Obtain clock selector for ACLK */
+FAR struct spi_dev_s *k210_spibus_initialize(int bus);
 
-  clksel0 = getreg32(K210_SYSCTL_CLKSEL0);
+/****************************************************************************
+ * Name:  k210_spi0select and k210_spi0status
+ ****************************************************************************/
 
-  if (1 == CLKSEL0_ACLK_SEL(clksel0))
-    {
-      /* PLL0 selected */
-
-      g_cpu_clock = k210_get_pll0clk() / 2;
-    }
-  else
-    {
-      /* OSC selected */
-
-      g_cpu_clock = OSC_FREQ;
-    }
-
-  /* Enable clock */
-
-  /* TODO: should move to each driver?? */
-
-  putreg32(0xffffffff, K210_SYSCTL_CLKENC);
-  putreg32(0xffffffff, K210_SYSCTL_CLKENP);
+#ifdef CONFIG_K210_SPI0
+void k210_spi0select(FAR struct spi_dev_s *dev, uint32_t devid,
+                     bool selected);
+uint8_t k210_spi0status(FAR struct spi_dev_s *dev, uint32_t devid);
 #endif
+
+#undef EXTERN
+#if defined(__cplusplus)
 }
+#endif
+
+#endif /* __ASSEMBLY__ */
+
+#endif /* __ARCH_RISCV_SRC_K210_K210_SPI_H */

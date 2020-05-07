@@ -1,9 +1,5 @@
 /****************************************************************************
- * arch/risc-v/src/k210/k210_fpioa.c
- *
- * Derives from software originally provided by Canaan Inc
- *
- *   Copyright 2018 Canaan Inc
+ * boards/risc-v/k210/maix-bit/src/k210_spi.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -28,39 +24,48 @@
 
 #include <nuttx/config.h>
 
-#include <assert.h>
-#include <debug.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <errno.h>
+#include <debug.h>
 
-#include <nuttx/arch.h>
+#include <nuttx/spi/spi.h>
 #include <arch/board/board.h>
 
-#include "riscv_internal.h"
-#include "riscv_arch.h"
-
-#include "k210_memorymap.h"
-#include "k210_fpioa.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
+#include "chip.h"
+#include "maix-bit.h"
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
-void k210_fpioa_config(uint32_t io, uint32_t ioflags)
+/****************************************************************************
+ * Name: k210_spidev_initialize
+ ****************************************************************************/
+
+void weak_function k210_spidev_initialize(void)
 {
-  uint32_t *fpioa = (uint32_t *)K210_FPIOA_BASE;
-  DEBUGASSERT(io < K210_IO_NUMBER);
-  putreg32(ioflags, &fpioa[io]);
+  /* TODO */
 }
 
 /****************************************************************************
- * Name: k210_configfpioa
+ * Name:  k210_spi0select and k210_spi0status
  ****************************************************************************/
 
-void k210_configfpioa(uint8_t num, uint32_t val)
+#ifdef CONFIG_K210_SPI0
+void k210_spi0select(FAR struct spi_dev_s *dev,
+                     uint32_t devid, bool selected)
 {
-  putreg32(val, (uintptr_t)K210_FPIOA_BASE + (4 * num));
+  spiinfo("devid: %d CS: %s\n",
+          (int)devid, selected ? "assert" : "de-assert");
+
+  /* TODO */
 }
+
+uint8_t k210_spi0status(FAR struct spi_dev_s *dev, uint32_t devid)
+{
+  uint8_t status = 0;
+  status |= SPI_STATUS_PRESENT;
+  return status;
+}
+#endif

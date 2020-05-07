@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/risc-v/src/k210/hardware/k210_memorymap.h
+ * arch/risc-v/src/k210/hardware/k210_fpioa.h
  *
  * Derives from software originally provided by Canaan Inc
  *
@@ -22,35 +22,22 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_RISCV_SRC_K210_HARDWARE_K210_MEMORYMAP_H
-#define __ARCH_RISCV_SRC_K210_HARDWARE_K210_MEMORYMAP_H
+#ifndef __ARCH_RISCV_SRC_K210_HARDWARE_K210_FPIOA_H
+#define __ARCH_RISCV_SRC_K210_HARDWARE_K210_FPIOA_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <nuttx/config.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/* Register Base Address ****************************************************/
+#define FUNC_SPI0_SCK   0x00001f11
+#define FUNC_SPI0_D0    0x80b03f04
+#define FUNC_SPI0_D1    0x00b03f05
+#define FUNC_GPIO_HS7   0x00921f1f
 
-#define K210_CLINT_BASE   0x02000000
-#define K210_PLIC_BASE    0x0c000000
-
-#ifdef CONFIG_K210_WITH_QEMU
-#define K210_UART0_BASE   0x10010000
-#else
-#define K210_UART0_BASE   0x38000000
-#endif
-#define K210_GPIOHS_BASE  0x38001000
-
-/* Under APB1 32 bit */
-
-#define K210_FPIOA_BASE   0x502b0000
-
-/* Under APB2 32 bit */
-
-#define K210_SYSCTL_BASE  0x50440000
-
-/* Under APB3 32 bit */
-
-#define K210_SPI0_BASE    0x52000000
-
-#endif /* __ARCH_RISCV_SRC_K210_HARDWARE_K210_MEMORYMAP_H */
+#endif /* __ARCH_RISCV_SRC_K210_HARDWARE_K210_FPIOA_H */

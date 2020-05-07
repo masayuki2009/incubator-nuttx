@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/risc-v/src/k210/hardware/k210_sysctl.h
+ * arch/risc-v/src/k210/hardware/k210_spi.h
  *
  * Derives from software originally provided by Canaan Inc
  *
@@ -22,8 +22,8 @@
  *
  ****************************************************************************/
 
-#ifndef __ARCH_RISCV_SRC_K210_HARDWARE_K210_SYSCTL_H
-#define __ARCH_RISCV_SRC_K210_HARDWARE_K210_SYSCTL_H
+#ifndef __ARCH_RISCV_SRC_K210_HARDWARE_K210_SPI_H
+#define __ARCH_RISCV_SRC_K210_HARDWARE_K210_SPI_H
 
 /****************************************************************************
  * Included Files
@@ -35,17 +35,32 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define K210_SYSCTL_PLL0  (K210_SYSCTL_BASE + 0x08)
+#define SPI_FIFO_LEN    32
 
-#define PLL_CLK_R(n)  (n & 0x00000f)
-#define PLL_CLK_F(n)  ((n & 0x0003f0) >> 4)
-#define PLL_CLK_OD(n) ((n & 0x003c00) >> 10)
+#define SPI_CTL0_OFFSET  0x00  /* Control Register 0 */
 
-#define K210_SYSCTL_CLKSEL0  (K210_SYSCTL_BASE + 0x20)
+#define SPI_CTL0_WMODE_SHIFT 6 /* SPI work mode */
+#define SPI_CTL0_WMODE_MASK  (3 << SPI_CTL0_WMODE_SHIFT)
 
-#define CLKSEL0_ACLK_SEL(n) (n & 0x00000001)
+#define SPI_CTL0_TMODE_SHIFT 8 /* SPI transfer mode */
+#define SPI_CTL0_TMODE_MASK  (3 << SPI_CTL0_TMODE_SHIFT)
 
-#define K210_SYSCTL_CLKENC  (K210_SYSCTL_BASE + 0x28) /* enable central */
-#define K210_SYSCTL_CLKENP  (K210_SYSCTL_BASE + 0x2c) /* enable peripheral */
+#define SPI_CTL0_TMODE_TXRX  0
+#define SPI_CTL0_TMODE_TX    1
+#define SPI_CTL0_TMODE_RX    2
 
-#endif /* __ARCH_RISCV_SRC_K210_HARDWARE_K210_SYSCTL_H */
+#define SPI_CTL0_DFS_SHIFT 16 /* SPI data frame size (0-31 bits) */
+#define SPI_CTL0_DFS_MASK   (0x1f << SPI_CTL0_DFS_SHIFT)
+
+#define SPI_CTL1_OFFSET  0x04  /* Control Register 1 */
+#define SPI_MEN_OFFSET   0x08  /* Master Enable (SSI Enable) */
+
+#define SPI_SEN_OFFSET   0x10  /* Slave Enable (chip select) */
+#define SPI_DIV_OFFSET   0x14  /* Divider (Baud Rate Select) */
+
+#define SPI_TFL_OFFSET   0x20  /* TX FIFO Level */
+#define SPI_RFL_OFFSET   0x24  /* RX FIFO Level */
+#define SPI_STS_OFFSET   0x28  /* Status */
+#define SPI_DAT_OFFSET   0x60  /* Data (r/w) : 0x60-0xec */
+
+#endif /* __ARCH_RISCV_SRC_K210_HARDWARE_K210_SPI_H */

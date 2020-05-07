@@ -70,6 +70,7 @@ extern "C"
 
 EXTERN uint32_t k210_get_cpuclk(void);
 EXTERN uint32_t k210_get_pll0clk(void);
+EXTERN uint32_t k210_get_spiclk(int n);
 EXTERN void k210_clockconfig(void);
 
 #if defined(__cplusplus)

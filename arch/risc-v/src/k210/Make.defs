@@ -75,3 +75,8 @@ CMN_UASRCS += riscv_signal_handler.S
 
 CHIP_CSRCS += k210_userspace.c
 endif
+
+ifneq ($(CONFIG_K210_WITH_QEMU),y)
+CHIP_CSRCS += k210_fpioa.c
+CHIP_CSRCS += k210_spi.c
+endif

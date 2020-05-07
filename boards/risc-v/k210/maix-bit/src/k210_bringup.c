@@ -71,5 +71,16 @@ int k210_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_MMCSD_SPI
+  /* Initialize the MMC/SD SPI driver (SPI0 is used) */
+
+  ret = k210_mmcsd_initialize(0, CONFIG_NSH_MMCSDMINOR);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize SD slot %d: %d\n",
+             CONFIG_NSH_MMCSDMINOR, ret);
+    }
+#endif
+
   return ret;
 }

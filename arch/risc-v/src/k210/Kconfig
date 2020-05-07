@@ -25,6 +25,11 @@ config K210_UART0
 	select ARCH_HAVE_SERIAL_TERMIOS
 	select K210_UART
 
+config K210_SPI0
+	bool "SPI0"
+	default y
+	depends on !K210_WITH_QEMU
+
 endmenu
 
 menu "K210 Others"

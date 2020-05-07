@@ -26,6 +26,9 @@
  ****************************************************************************/
 
 #include <stdint.h>
+#include <nuttx/config.h>
+
+#include "chip.h"
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -83,10 +86,33 @@
 #define K210_IOFLAG_GPIOHS (K210_IO_DS(0xf) | K210_IO_OUTPUT_ENABLE | \
                             K210_IO_INPUT_ENABLE | K210_IO_ST)
 
+#ifndef __ASSEMBLY__
+
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
+
 /****************************************************************************
- * Public Functions Prototypes
+ * Public Function Prototypes
  ****************************************************************************/
 
+/****************************************************************************
+ * Name:  k210_configfpioa
+ ****************************************************************************/
+
+void k210_configfpioa(uint8_t num, uint32_t val);
 void k210_fpioa_config(uint32_t io, uint32_t ioflag);
+
+#undef EXTERN
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* __ASSEMBLY__ */
 
 #endif /* __ARCH_RISCV_SRC_K210_K210_FPIOA_H */

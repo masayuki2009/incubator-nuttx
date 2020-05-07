@@ -45,4 +45,12 @@ ifeq ($(CONFIG_ARCH_LEDS),y)
 CSRCS += k210_leds.c
 endif
 
+ifeq ($(CONFIG_SPI),y)
+CSRCS += k210_spi.c
+endif
+
+ifeq ($(CONFIG_MMCSD_SPI),y)
+CSRCS += k210_mmcsd.c
+endif
+
 include $(TOPDIR)/boards/Board.mk

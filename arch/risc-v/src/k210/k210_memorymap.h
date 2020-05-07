@@ -42,6 +42,8 @@
 #include "hardware/k210_clint.h"
 #include "hardware/k210_plic.h"
 #include "hardware/k210_sysctl.h"
+#include "hardware/k210_spi.h"
+#include "hardware/k210_fpioa.h"
 
 /****************************************************************************
  * Pre-processor Definitions
