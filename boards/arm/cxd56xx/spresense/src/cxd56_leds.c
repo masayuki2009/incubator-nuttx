@@ -102,6 +102,8 @@ void board_autoled_initialize(void)
   cxd56_gpio_config(GPIO_LED2, false);
   cxd56_gpio_config(GPIO_LED3, false);
   cxd56_gpio_config(GPIO_LED4, false);
+
+  cxd56_gpio_config(PIN_UART2_RXD, false);
 }
 
 /****************************************************************************
@@ -132,6 +134,8 @@ void board_autoled_on(int led)
       default:
         break;
     }
+
+  cxd56_gpio_write(PIN_UART2_RXD, 1);
 #else
   led_clrbits(BOARD_LED1_BIT | BOARD_LED2_BIT |
               BOARD_LED3_BIT | BOARD_LED4_BIT);
@@ -167,6 +171,7 @@ void board_autoled_off(int led)
       default:
         break;
     }
+  cxd56_gpio_write(PIN_UART2_RXD, 0);
 #else
   led_clrbits(led);
 #endif
