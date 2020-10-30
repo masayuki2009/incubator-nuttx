@@ -415,6 +415,8 @@ void up_assert(const char *filename, int lineno)
 #endif
 #endif
 
+  asm("bkpt");
+
   up_dumpstate();
 
   /* Flush any buffered SYSLOG data (from the above) */
