@@ -104,6 +104,14 @@ void board_autoled_initialize(void)
   cxd56_gpio_config(GPIO_LED4, false);
 
   cxd56_gpio_config(PIN_UART2_RXD, false);
+
+  /* NOTE: To monitor CPU activity signals with pins */
+
+  CXD56_PIN_CONFIGS(PINCONFS_SPI4_GPIO);
+  cxd56_gpio_config(PIN_SPI4_CS_X, false); /* CPU0 */
+  cxd56_gpio_config(PIN_SPI4_MOSI, false); /* CPU1 */
+  cxd56_gpio_config(PIN_SPI4_MISO, false); /* CPU2 */
+  cxd56_gpio_config(PIN_SPI4_SCK, false);  /* CPU3 */
 }
 
 /****************************************************************************
@@ -117,18 +125,22 @@ void board_autoled_on(int led)
     {
       case LED_CPU0:
         cxd56_gpio_write(GPIO_LED1, 1);
+        cxd56_gpio_write(PIN_SPI4_CS_X, 1);
         break;
 
       case LED_CPU1:
         cxd56_gpio_write(GPIO_LED2, 1);
+        cxd56_gpio_write(PIN_SPI4_MOSI, 1);
         break;
 
       case LED_CPU2:
         cxd56_gpio_write(GPIO_LED3, 1);
+        cxd56_gpio_write(PIN_SPI4_MISO, 1);
         break;
 
       case LED_CPU3:
         cxd56_gpio_write(GPIO_LED4, 1);
+        cxd56_gpio_write(PIN_SPI4_SCK, 1);
         break;
 
       default:
@@ -154,18 +166,22 @@ void board_autoled_off(int led)
     {
       case LED_CPU0:
         cxd56_gpio_write(GPIO_LED1, 0);
+        cxd56_gpio_write(PIN_SPI4_CS_X, 0);
         break;
 
       case LED_CPU1:
         cxd56_gpio_write(GPIO_LED2, 0);
+        cxd56_gpio_write(PIN_SPI4_MOSI, 0);
         break;
 
       case LED_CPU2:
         cxd56_gpio_write(GPIO_LED3, 0);
+        cxd56_gpio_write(PIN_SPI4_MISO, 0);
         break;
 
       case LED_CPU3:
         cxd56_gpio_write(GPIO_LED4, 0);
+        cxd56_gpio_write(PIN_SPI4_SCK, 0);
         break;
 
       default:
