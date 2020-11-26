@@ -47,6 +47,7 @@
 #include <nuttx/sched_note.h>
 #include <arch/irq.h>
 
+#include "irq/irq.h"
 #include "sched/sched.h"
 
 #ifdef CONFIG_SPINLOCK
@@ -317,6 +318,19 @@ void spin_setbit(FAR volatile cpu_set_t *set, unsigned int cpu,
 #ifdef CONFIG_SCHED_INSTRUMENTATION_SPINLOCKS
   prev    = *set;
 #endif
+
+#ifdef CONFIG_ARCH_ARM /* DEBUG */
+  if (set == &g_cpu_irqset)
+    {
+      /* Check if already locked */
+      ASSERT(1 == g_cpu_irqlock);
+
+      /* But no CPU besides me set g_cpu_irqset */
+      cpu_set_t tmp = *set;
+      ASSERT((0 == tmp) || ((1 << cpu) == tmp));
+    }
+#endif
+
   *set   |= (1 << cpu);
   *orlock = SP_LOCKED;
 
@@ -381,6 +395,15 @@ void spin_clrbit(FAR volatile cpu_set_t *set, unsigned int cpu,
   prev    = *set;
 #endif
   *set   &= ~(1 << cpu);
+
+#ifdef CONFIG_ARCH_ARM /* DEBUG */
+  if (set == &g_cpu_irqset)
+    {
+      /* Check if no CPU holds a critical section */
+      ASSERT(0 == *set);
+    }
+#endif
+
   *orlock = (*set != 0) ? SP_LOCKED : SP_UNLOCKED;
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION_SPINLOCKS

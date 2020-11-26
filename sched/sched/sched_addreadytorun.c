@@ -47,6 +47,11 @@
 #include "irq/irq.h"
 #include "sched/sched.h"
 
+#ifdef CONFIG_ARCH_ARM /* DEBUG */
+volatile spinlock_t g_trap_sched;
+volatile bool g_enable_sched_bkpt = false;
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -173,6 +178,15 @@ bool nxsched_add_readytorun(FAR struct tcb_s *btcb)
   int task_state;
   int cpu;
   int me;
+
+#ifdef CONFIG_ARCH_ARM /* DEBUG */
+  if (SP_LOCKED == spin_trylock(&g_trap_sched))
+    {
+      g_enable_sched_bkpt = true;
+      SP_DMB();
+      ASSERT(false);
+    }
+#endif
 
   /* Check if the blocked TCB is locked to this CPU */
 
@@ -391,6 +405,15 @@ bool nxsched_add_readytorun(FAR struct tcb_s *btcb)
           doswitch = false;
         }
     }
+
+#ifdef CONFIG_ARCH_ARM /* DEBUG */
+  if (g_enable_sched_bkpt)
+    {
+      asm("bkpt");
+    }
+
+  spin_unlock(&g_trap_sched);
+#endif
 
   return doswitch;
 }

@@ -48,6 +48,11 @@
 #include "irq/irq.h"
 #include "sched/sched.h"
 
+#ifdef CONFIG_ARCH_ARM /* DEBUG */
+extern volatile spinlock_t g_trap_sched;
+extern volatile bool g_enable_sched_bkpt;
+#endif
+
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
@@ -139,6 +144,15 @@ bool nxsched_remove_readytorun(FAR struct tcb_s *rtcb)
   FAR dq_queue_t *tasklist;
   bool doswitch = false;
   int cpu;
+
+#ifdef CONFIG_ARCH_ARM /* DEBUG */
+  if (SP_LOCKED == spin_trylock(&g_trap_sched))
+    {
+      g_enable_sched_bkpt = true;
+      SP_DMB();
+      ASSERT(false);
+    }
+#endif
 
   /* Which CPU (if any) is the task running on?  Which task list holds the
    * TCB?
@@ -294,6 +308,15 @@ bool nxsched_remove_readytorun(FAR struct tcb_s *rtcb)
   /* Since the TCB is no longer in any list, it is now invalid */
 
   rtcb->task_state = TSTATE_TASK_INVALID;
+
+#ifdef CONFIG_ARCH_ARM /* DEBUG */
+  if (g_enable_sched_bkpt)
+    {
+      asm("bkpt");
+    }
+
+  spin_unlock(&g_trap_sched);
+#endif
 
   return doswitch;
 }
