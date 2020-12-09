@@ -158,6 +158,14 @@ extern "C"
 
 /****************************************************************************
  * Name: irq_attach
+ ****************************************************************************/
+
+#ifdef CONFIG_SMP
+void check_irqlock(void);
+#endif
+
+/****************************************************************************
+ * Name: irq_attach
  *
  * Description:
  *   Configure the IRQ subsystem so that IRQ number 'irq' is dispatched to

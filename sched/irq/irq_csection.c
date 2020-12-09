@@ -155,6 +155,13 @@ bool irq_waitlock(int cpu)
  * Public Functions
  ****************************************************************************/
 
+void check_irqlock(void)
+{
+  SP_DMB();
+  ASSERT(spin_islocked(&g_cpu_irqlock));
+  ASSERT((g_cpu_irqset & (1 << this_cpu())) != 0);
+}
+
 /****************************************************************************
  * Name: enter_critical_section
  *
