@@ -113,6 +113,10 @@
 #  include <arch/chip/cisif.h>
 #endif
 
+#ifdef CONFIG_USBADB
+#  include <nuttx/usb/adb.h>
+#endif
+
 #include "spresense.h"
 
 /****************************************************************************
@@ -485,6 +489,10 @@ int cxd56_bringup(void)
     {
       _err("ERROR: Failed to initialize Frame Buffer Driver.\n");
     }
+#endif
+
+#ifdef CONFIG_USBADB
+  usbdev_adb_initialize();
 #endif
 
   return 0;
