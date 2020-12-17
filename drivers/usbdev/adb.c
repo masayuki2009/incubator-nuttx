@@ -818,7 +818,7 @@ static void usbclass_ep0incomplete(FAR struct usbdev_ep_s *ep,
 #ifdef CONFIG_USBDEV_DUALSPEED
 static int16_t usbclass_mkcfgdesc(FAR uint8_t *buf,
                                   FAR struct usbdev_devinfo_s *devinfo,
-                                  uint8_t speed, uint8_t type);
+                                  uint8_t speed, uint8_t type)
 #else
 static int16_t usbclass_mkcfgdesc(FAR uint8_t *buf,
                                   FAR struct usbdev_devinfo_s *devinfo)
@@ -1200,7 +1200,12 @@ static int usbclass_setup(FAR struct usbdevclass_driver_s *driver,
 
                   case USB_DESC_TYPE_CONFIG:
                     {
+#ifdef CONFIG_USBDEV_DUALSPEED
+                      ret = usbclass_mkcfgdesc(ctrlreq->buf, NULL,
+                                               dev->speed, ctrl->value[1]);
+#else
                       ret = usbclass_mkcfgdesc(ctrlreq->buf, NULL);
+#endif
                     }
                     break;
 
