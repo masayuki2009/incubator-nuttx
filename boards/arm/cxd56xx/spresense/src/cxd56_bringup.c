@@ -476,5 +476,9 @@ int cxd56_bringup(void)
     }
 #endif
 
+#ifdef CONFIG_USBADB
+  usbdev_adb_initialize();
+#endif
+
   return 0;
 }
