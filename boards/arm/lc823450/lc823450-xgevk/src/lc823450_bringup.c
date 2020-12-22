@@ -40,6 +40,10 @@
 #  include <nuttx/usb/rndis.h>
 #endif
 
+#ifdef CONFIG_USBADB
+#  include <nuttx/usb/adb.h>
+#endif
+
 #ifdef CONFIG_WATCHDOG
 #  include "lc823450_wdt.h"
 #endif
@@ -110,6 +114,10 @@ int lc823450_bringup(void)
   mac[4] = (CONFIG_NETINIT_MACADDR_1 >> (8 * 1)) & 0xff;
   mac[5] = (CONFIG_NETINIT_MACADDR_1 >> (8 * 0)) & 0xff;
   usbdev_rndis_initialize(mac);
+#endif
+
+#ifdef CONFIG_USBADB
+  usbdev_adb_initialize();
 #endif
 
   /* If we got here then perhaps not all initialization was successful, but
