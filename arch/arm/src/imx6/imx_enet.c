@@ -40,7 +40,7 @@
 #include <nuttx/arch.h>
 #include <nuttx/wqueue.h>
 #include <nuttx/signal.h>
-#include <nuttx/net/mii.h>
+#include <nuttx/net/gmii.h>
 #include <nuttx/net/arp.h>
 #include <nuttx/net/phy.h>
 #include <nuttx/net/netdev.h>
@@ -156,7 +156,7 @@
 
 /* TX timeout = 1 minute */
 
-#define IMX_TXTIMEOUT   (60 * CLK_TCK)
+#define IMX_TXTIMEOUT     (60 * CLK_TCK)
 #define MII_MAXPOLLS      (0x1ffff)
 #define LINK_WAITUS       (500 * 1000)
 #define LINK_NLOOPS       (10)
@@ -220,6 +220,16 @@
 #  define BOARD_PHY_10BASET(s)  (((s) & MII_DP83825I_PHYSTS_SPEED) != 0)
 #  define BOARD_PHY_100BASET(s) (((s) & MII_DP83825I_PHYSTS_SPEED) == 0)
 #  define BOARD_PHY_ISDUPLEX(s) (((s) & MII_DP83825I_PHYSTS_DUPLEX) != 0)
+#elif defined(CONFIG_ETH0_PHY_AR8031)
+#  define BOARD_PHY_NAME        "AR8031"
+#  define BOARD_PHYID1          MII_PHYID1_AR8031
+#  define BOARD_PHYID2          MII_PHYID2_AR8031
+#  define BOARD_PHY_STATUS      MII_AR8031_PSSR
+#  define BOARD_PHY_ADDR        (1)
+#  define BOARD_PHY_10BASET(s)   (((s)&MII_AR8031_PSSR_10MBPS) == ((s)&MII_AR8031_PSSR_SPEEDMASK))
+#  define BOARD_PHY_100BASET(s)  (((s)&MII_AR8031_PSSR_100MBPS) == ((s)&MII_AR8031_PSSR_SPEEDMASK))
+#  define BOARD_PHY_1000BASET(s) (((s)&MII_AR8031_PSSR_1000MBPS) == ((s)&MII_AR8031_PSSR_SPEEDMASK))
+#  define BOARD_PHY_ISDUPLEX(s)  (((s)&MII_AR8031_PSSR_DUPLEX) != 0)
 #else
 #  error "Unrecognized or missing PHY selection"
 #endif
@@ -235,7 +245,7 @@
  *             = 23
  */
 
-#define IMX_MII_SPEED  0x38 /* 100Mbs. Revisit and remove hardcoded value */
+#define IMX_MII_SPEED  0x5 /* 1000Mbs. Revisit and remove hardcoded value */
 #if IMX_MII_SPEED > 63
 #  error "IMX_MII_SPEED is out-of-range"
 #endif
@@ -386,9 +396,9 @@ static int imx_phyintenable(struct imx_driver_s *priv);
 #endif
 static inline void imx_initmii(struct imx_driver_s *priv);
 
-#if 0 /* TODO */
 static int imx_writemii(struct imx_driver_s *priv, uint8_t phyaddr,
              uint8_t regaddr, uint16_t data);
+#ifndef CONFIG_IMX_ENET_WITH_QEMU
 static int imx_readmii(struct imx_driver_s *priv, uint8_t phyaddr,
              uint8_t regaddr, uint16_t *data);
 #endif
@@ -541,15 +551,17 @@ static int imx_transmit(FAR struct imx_driver_s *priv)
       priv->txhead = 0;
     }
 
-#ifdef CONFIG_DEBUG_ASSERTIONS
+  //#ifdef CONFIG_DEBUG_ASSERTIONS
   up_invalidate_dcache((uintptr_t)txdesc,
                        (uintptr_t)txdesc + sizeof(struct enet_desc_s));
 
+  up_udelay(1);
+  
 #if CONFIG_IMX_ENET_NTXBUFFERS > 1
   DEBUGASSERT(priv->txtail != priv->txhead);
 #endif
   DEBUGASSERT((txdesc->status1 & TXDESC_R) == 0);
-#endif
+  //#endif
 
   /* Increment statistics */
 
@@ -606,6 +618,9 @@ static int imx_transmit(FAR struct imx_driver_s *priv)
 
   spin_unlock_irqrestore(NULL, flags);
 
+  ninfo("*** TDAR=0x%x at 0x%x \n",
+        getreg32(IMX_ENET_TDAR), IMX_ENET_TDAR);
+  
 #if CONFIG_IMX_ENET_NTXBUFFERS == 1
   priv->txbusy = false;
 #endif
@@ -647,7 +662,7 @@ static int imx_txpoll(struct net_driver_s *dev)
    * the field d_len is set to a value > 0.
    */
 
-  ninfo("Poll result: d_len=%d\n", priv->dev.d_len);
+  //ninfo("Poll result: d_len=%d\n", priv->dev.d_len);
 
   if (priv->dev.d_len > 0)
     {
@@ -1126,6 +1141,7 @@ static void imx_enet_interrupt_work(FAR void *arg)
 #if 0
   up_enable_irq(IMX_IRQ_ENET0TMR);
 #endif
+  ninfo("+++ up_enable_irq() \n");
   up_enable_irq(IMX_IRQ_ENET0);
 }
 
@@ -1153,11 +1169,14 @@ static int imx_enet_interrupt(int irq, FAR void *context, FAR void *arg)
 {
   register FAR struct imx_driver_s *priv = &g_enet[0];
 
+  ninfo("***** \n");
+
   /* Disable further Ethernet interrupts.  Because Ethernet interrupts are
    * also disabled if the TX timeout event occurs, there can be no race
    * condition here.
    */
 
+  ninfo("--- up_disable_irq() \n");
   up_disable_irq(IMX_IRQ_ENET0);
 
   /* Schedule to perform the interrupt processing on the worker thread. */
@@ -1233,6 +1252,7 @@ static void imx_txtimeout_expiry(wdparm_t arg)
    * condition with interrupt work that is already queued and in progress.
    */
 
+  ninfo("--- up_disable_irq() \n");
   up_disable_irq(IMX_IRQ_ENET0);
 
   /* Schedule to perform the TX timeout processing on the worker thread,
@@ -1355,6 +1375,9 @@ static int imx_ifup_action(struct net_driver_s *dev, bool resetphy)
 
   imx_initmii(priv);
 
+  ninfo("Set MAC=%02x:%02x:%02x:%02x:%02x:%02x \n",
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  
   /* Set the MAC address */
 
   putreg32((mac[0] << 24) | (mac[1] << 16) | (mac[2] << 8) | mac[3],
@@ -1402,6 +1425,7 @@ static int imx_ifup_action(struct net_driver_s *dev, bool resetphy)
 
   regval  = getreg32(IMX_ENET_ECR);
   regval |= ENET_ECR_ETHEREN
+         | ENET_ECR_SPEED
 #ifdef IMX_USE_DBSWAP
          | ENET_ECR_DBSWP
 #endif
@@ -1435,6 +1459,7 @@ static int imx_ifup_action(struct net_driver_s *dev, bool resetphy)
 #if 0
   up_enable_irq(IMX_IRQ_ENET0TMR);
 #endif
+  ninfo("+++ up_enable_irq() \n");
   up_enable_irq(IMX_IRQ_ENET0);
   return OK;
 }
@@ -1495,6 +1520,7 @@ static int imx_ifdown(struct net_driver_s *dev)
 
   flags = enter_critical_section();
 
+  ninfo("--- up_disable_irq() \n");
   up_disable_irq(IMX_IRQ_ENET0);
   putreg32(0, IMX_ENET_EIMR);
 
@@ -1927,9 +1953,16 @@ static void imx_initmii(struct imx_driver_s *priv)
    * clock.  This hold time value may need to be increased on some platforms
    */
 
+  _err("*** ENET_MSCR=0x%x \n", getreg32(IMX_ENET_MSCR));
+
   putreg32(ENET_MSCR_HOLDTIME_2CYCLES |
            IMX_MII_SPEED << ENET_MSCR_MII_SPEED_SHIFT,
            IMX_ENET_MSCR);
+
+  /* power up */
+
+  uint16_t val = 0xffff & ~0x0800;
+  imx_writemii(priv, 0xff, 0x00, val); /* set BMCR */
 }
 
 /****************************************************************************
@@ -1949,7 +1982,6 @@ static void imx_initmii(struct imx_driver_s *priv)
  *
  ****************************************************************************/
 
-#if 0 /* TODO */
 static int imx_writemii(struct imx_driver_s *priv, uint8_t phyaddr,
                         uint8_t regaddr, uint16_t data)
 {
@@ -1991,7 +2023,6 @@ static int imx_writemii(struct imx_driver_s *priv, uint8_t phyaddr,
   putreg32(ENET_INT_MII, IMX_ENET_EIR);
   return OK;
 }
-#endif
 
 /****************************************************************************
  * Function: imx_reademii
@@ -2010,7 +2041,7 @@ static int imx_writemii(struct imx_driver_s *priv, uint8_t phyaddr,
  *
  ****************************************************************************/
 
-#if 0 /* TODO */
+#ifndef CONFIG_IMX_ENET_WITH_QEMU
 static int imx_readmii(struct imx_driver_s *priv, uint8_t phyaddr,
                            uint8_t regaddr, uint16_t *data)
 {
@@ -2078,7 +2109,7 @@ static int imx_readmii(struct imx_driver_s *priv, uint8_t phyaddr,
 
 static inline int imx_initphy(struct imx_driver_s *priv, bool renogphy)
 {
-#if 0 /* TODO */
+#ifndef CONFIG_IMX_ENET_WITH_QEMU
   uint32_t rcr;
   uint32_t tcr;
   uint32_t racc;
@@ -2125,6 +2156,7 @@ static inline int imx_initphy(struct imx_driver_s *priv, bool renogphy)
       /* Verify PHYID1.  Compare OUI bits 3-18 */
 
       ninfo("%s: PHYID1: %04x\n", BOARD_PHY_NAME, phydata);
+
       if (phydata != BOARD_PHYID1)
         {
           nerr("ERROR: PHYID1=%04x incorrect for %s.  Expected %04x\n",
@@ -2233,6 +2265,14 @@ static inline int imx_initphy(struct imx_driver_s *priv, bool renogphy)
                      MII_ADVERTISE_10BASETXHALF |
                      MII_ADVERTISE_CSMA);
 
+#elif defined (CONFIG_ETH0_PHY_AR8031)
+
+      imx_writemii(priv, phyaddr, MII_ADVERTISE,
+                   MII_ADVERTISE_100BASETXFULL |
+                   MII_ADVERTISE_100BASETXHALF |
+                   MII_ADVERTISE_10BASETXFULL |
+                   MII_ADVERTISE_10BASETXHALF |
+                   MII_ADVERTISE_CSMA);
 #endif
 
       /* Start auto negotiation */
@@ -2378,6 +2418,14 @@ static inline int imx_initphy(struct imx_driver_s *priv, bool renogphy)
 
       ninfo("%s: 100 Base-T\n",  BOARD_PHY_NAME);
     }
+#ifdef CONFIG_ETH0_PHY_AR8031
+  else if (BOARD_PHY_1000BASET(phydata))
+    {
+      /* 1000 Mbps */
+
+      ninfo("%s: 1000 Base-T\n",  BOARD_PHY_NAME);
+    }
+#endif
   else
     {
       /* This might happen if Autonegotiation did not complete(?) */
@@ -2492,6 +2540,8 @@ static void imx_reset(struct imx_driver_s *priv)
 {
   unsigned int i;
 
+  _err("ENET_ECR=0x%x \n", getreg32(IMX_ENET_ECR));
+
   /* Set the reset bit and clear the enable bit */
 
   putreg32(ENET_ECR_RESET, IMX_ENET_ECR);
@@ -2540,7 +2590,7 @@ int imx_netinitialize(int intf)
   DEBUGASSERT(intf < CONFIG_IMX_ENET_NETHIFS);
   priv = &g_enet[intf];
 
-#if 0 /* TODO */
+#if 0 /* NOTE: clock & iomux are set in u-boot */
   uint32_t regval;
 
   /* Enable ENET1_TX_CLK_DIR (Provides 50MHz clk OUT to PHY) */
@@ -2622,15 +2672,14 @@ int imx_netinitialize(int intf)
 
   /* hardcoded offset: todo: need proper header file */
 
-#if 0 /* TODO */
-  uidl   = getreg32(IMX_OCOTP_BASE + 0x410);
-  uidml  = getreg32(IMX_OCOTP_BASE + 0x420);
-#endif
-
+  uidl   = getreg32(IMX_OCOTPCTRL_VBASE + 0x620);
+  uidml  = getreg32(IMX_OCOTPCTRL_VBASE + 0x630);
   mac    = priv->dev.d_mac.ether.ether_addr_octet;
 
+#if 0 /* TODO for QEMU */
   uidml |= 0x00000200;
   uidml &= 0x0000feff;
+#endif
 
   mac[0] = (uidml & 0x0000ff00) >> 8;
   mac[1] = (uidml & 0x000000ff);

@@ -59,6 +59,10 @@
  * abilities
  */
 
+/* AR8031: */
+
+#define MII_AR8031_PSSR              0x11      /* Phy-Specific Status Register */
+
 /* National Semiconductor DP83840: 0x07-0x11, 0x14, 0x1a, 0x1d-0x1f
  * reserved
  */
@@ -425,6 +429,17 @@
 #define MII_LAN8720_MODES_PDN          MII_LAN8720_MODES_MODE(6)
 #define MII_LAN8720_MODES_ALL          MII_LAN8720_MODES_MODE(7)
 #define MII_LAN8720_MODES_RESV        (1 << 14) /* Bit 14: Set to 1 */
+
+/* Atheros AR8031 MII ID1/2 register bits */
+
+#define MII_PHYID1_AR8031            0x004d    /* ID1 value for AR8031 */
+#define MII_PHYID2_AR8031            0xd074    /* ID2 value for AR8031 */
+
+#define MII_AR8031_PSSR_SPEEDMASK    (0x3 << 14) /* Bit 14-15: Speed */
+#define MII_AR8031_PSSR_10MBPS       (0x0 << 14)
+#define MII_AR8031_PSSR_100MBPS      (0x1 << 14)
+#define MII_AR8031_PSSR_1000MBPS     (0x2 << 14)
+#define MII_AR8031_PSSR_DUPLEX       (1 << 13)   /* Bit 13:  Full duplex mode */
 
 /* SMSC LAN8740 MII ID1/2 register bits */
 

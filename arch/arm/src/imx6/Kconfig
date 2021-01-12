@@ -159,6 +159,10 @@ config IMX_ENET_PHYINIT
 		imx_phy_boardinitialize();  The i.MX6 ENET driver will call this
 		function one time before it first uses the PHY.
 
+config IMX_ENET_WITH_QEMU
+	bool "With QEMU"
+	default n
+
 endmenu # IMX_ENET
 
 config IMX_DDR_SIZE
