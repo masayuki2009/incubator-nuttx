@@ -410,6 +410,12 @@ config INIT_MOUNT_DATA
 	default ""
 
 endif # INIT_MOUNT
+
+menuconfig INIT_MOUNT_NFS
+	bool "Auto-mount init file system via NFS"
+	default n
+	depends on !DISABLE_MOUNTPOINT && NET_TCP && NFS
+
 endif # INIT_FILE
 
 config RR_INTERVAL

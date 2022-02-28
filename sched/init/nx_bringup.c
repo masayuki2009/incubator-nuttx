@@ -40,6 +40,14 @@
 #include <nuttx/userspace.h>
 #include <nuttx/binfmt/binfmt.h>
 
+#ifdef CONFIG_INIT_MOUNT_NFS
+# include <netinet/in.h>
+# include <arpa/inet.h>
+# include <nuttx/fs/nfs.h>
+# include <nuttx/net/netdev.h>
+# include <net/if.h>
+#endif
+
 #ifdef CONFIG_PAGING
 # include "paging/paging.h"
 #endif
@@ -112,9 +120,112 @@ extern const int             CONFIG_INIT_NEXPORTS;
 #  define CONFIG_INIT_PRIORITY SCHED_PRIORITY_DEFAULT
 #endif
 
+#ifdef CONFIG_INIT_MOUNT_NFS
+FAR struct net_driver_s *netdev_findbyname(FAR const char *ifname);
+void netdev_ifup(FAR struct net_driver_s *dev);
+#endif
+
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+#ifdef CONFIG_INIT_MOUNT_NFS
+static int nfsroot_main(int argc, char *argv[])
+{
+  int ret;
+  posix_spawnattr_t attr;
+  FAR struct net_driver_s *dev;
+  dev = netdev_findbyname("eth0");
+  ASSERT(dev);
+
+  struct ifreq req;
+  memset(&req, 0, sizeof(req));
+
+  /* Set MAC address */
+
+  req.ifr_hwaddr.sa_data[0] = 0x00;
+  req.ifr_hwaddr.sa_data[1] = 0xe0;
+  req.ifr_hwaddr.sa_data[2] = 0xde;
+  req.ifr_hwaddr.sa_data[3] = 0xad;
+  req.ifr_hwaddr.sa_data[4] = 0xbe;
+  req.ifr_hwaddr.sa_data[5] = 0xef;
+
+  memcpy(dev->d_mac.ether.ether_addr_octet,
+         req.ifr_hwaddr.sa_data, IFHWADDRLEN);
+
+  /* Set IPv4 adresses (host, default route, netmask) */
+
+  dev->d_ipaddr = inet_addr("10.0.2.15");
+  dev->d_draddr = inet_addr("10.0.2.2");
+  dev->d_netmask = inet_addr("255.255.255.0");
+
+  /* Set the interface up */
+
+  netdev_ifup(dev);
+
+  /* nfsmount */
+
+  struct nfs_args data;
+  memset(&data, 0, sizeof(data));
+  data.sotype = SOCK_STREAM;
+
+  FAR struct sockaddr_in *sin;
+  sin = (FAR struct sockaddr_in *)&data.addr;
+  inet_pton(AF_INET, "43.31.77.50", &sin->sin_addr);
+  sin->sin_family = AF_INET;
+  sin->sin_port   = htons(NFS_PMAPPORT);
+  data.addrlen = sizeof(struct sockaddr_in);
+  data.path = "/exports-nuttx/armv7a-kernel";
+  ret = nx_mount(NULL, "/mnt/nfs",
+                 "nfs", 0,
+                 &data);
+  DEBUGASSERT(ret >= 0);
+
+  /* Start the application initialization program from a program in a
+   * mounted file system.  Presumably the file system was mounted as part
+   * of the board_late_initialize() operation.
+   */
+
+  sinfo("Starting init task: %s\n", CONFIG_INIT_FILEPATH);
+
+  posix_spawnattr_init(&attr);
+
+  attr.priority  = CONFIG_INIT_PRIORITY;
+#ifndef CONFIG_ARCH_ADDRENV
+  attr.stacksize = CONFIG_INIT_STACKSIZE;
+#endif
+
+  ret = exec_spawn(CONFIG_INIT_FILEPATH, argv, NULL,
+                   CONFIG_INIT_SYMTAB, CONFIG_INIT_NEXPORTS, &attr);
+  DEBUGASSERT(ret >= 0);
+
+  sem_t sem;
+
+  /* NOTE: to avoid kernel crash */
+
+  nxsem_init(&sem, 0, 0);
+  nxsem_wait_uninterruptible(&sem);
+
+  UNUSED(ret);
+  return 0;
+}
+
+static inline void nx_nfsroot(void)
+{
+  /* Start the page fill worker kernel thread that will resolve page faults.
+   * This should always be the first thread started because it may have to
+   * resolve page faults in other threads
+   */
+
+  sinfo("Starting init trampoline\n");
+
+  int pid = kthread_create("nfsroot", 100,
+                           3072,
+                           (main_t)nfsroot_main,
+                           (FAR char * const *)NULL);
+  DEBUGASSERT(pid > 0);
+}
+#endif /* CONFIG_INIT_MOUNT_NFS */
 
 /****************************************************************************
  * Name: nx_pgworker
@@ -234,9 +345,6 @@ static inline void nx_start_application(void)
   FAR char *const *argv = NULL;
 #endif
   int ret;
-#ifdef CONFIG_INIT_FILE
-  posix_spawnattr_t attr;
-#endif
 
 #ifdef CONFIG_BOARD_LATE_INITIALIZE
   /* Perform any last-minute, board-specific initialization, if so
@@ -270,6 +378,10 @@ static inline void nx_start_application(void)
 
 #elif defined(CONFIG_INIT_FILE)
 
+#ifdef CONFIG_INIT_MOUNT_NFS
+  nx_nfsroot();
+  UNUSED(argv);
+#else
 #ifdef CONFIG_INIT_MOUNT
   /* Mount the file system containing the init program. */
 
@@ -286,6 +398,7 @@ static inline void nx_start_application(void)
 
   sinfo("Starting init task: %s\n", CONFIG_INIT_FILEPATH);
 
+  posix_spawnattr_t attr;
   posix_spawnattr_init(&attr);
 
   attr.priority  = CONFIG_INIT_PRIORITY;
@@ -295,6 +408,8 @@ static inline void nx_start_application(void)
   ret = exec_spawn(CONFIG_INIT_FILEPATH, argv, NULL,
                    CONFIG_INIT_SYMTAB, CONFIG_INIT_NEXPORTS, &attr);
   DEBUGASSERT(ret >= 0);
+
+#endif
 #endif
 
   UNUSED(ret);
