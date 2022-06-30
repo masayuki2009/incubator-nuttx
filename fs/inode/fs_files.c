@@ -296,7 +296,7 @@ int files_duplist(FAR struct filelist *plist, FAR struct filelist *clist)
 #endif
 
           filep = &plist->fl_files[i][j];
-          if (filep->f_inode == NULL || (filep->f_oflags & O_CLOEXEC) != 0)
+          if (filep->f_inode == NULL)
             {
               continue;
             }
