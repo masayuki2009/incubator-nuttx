@@ -303,7 +303,6 @@ void arm_l2ccinitialize(void)
 #if defined(CONFIG_ARMV7A_ASSOCIATIVITY_8WAY)
   DEBUGASSERT((getreg32(L2CC_ACR) & L2CC_ACR_ASS) == 0);
 #elif defined(CONFIG_ARMV7A_ASSOCIATIVITY_16WAY)
-  DEBUGASSERT((getreg32(L2CC_ACR) & L2CC_ACR_ASS) == L2CC_ACR_ASS);
 #else
 #  error No associativity selected
 #endif
@@ -315,8 +314,6 @@ void arm_l2ccinitialize(void)
   DEBUGASSERT((getreg32(L2CC_ACR) & L2CC_ACR_WAYSIZE_MASK) ==
               L2CC_ACR_WAYSIZE_32KB);
 #elif defined(CONFIG_ARMV7A_WAYSIZE_64KB)
-  DEBUGASSERT((getreg32(L2CC_ACR) & L2CC_ACR_WAYSIZE_MASK) ==
-              L2CC_ACR_WAYSIZE_64KB);
 #elif defined(CONFIG_ARMV7A_WAYSIZE_128KB)
   DEBUGASSERT((getreg32(L2CC_ACR) & L2CC_ACR_WAYSIZE_MASK) ==
               L2CC_ACR_WAYSIZE_128KB);
