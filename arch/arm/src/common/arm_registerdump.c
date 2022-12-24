@@ -98,4 +98,5 @@ void up_dump_register(void *dumpregs)
 #ifdef REG_EXC_RETURN
   _alert("EXC_RETURN: %08" PRIx32 "\n", regs[REG_EXC_RETURN]);
 #endif
+  asm("bkpt");
 }
