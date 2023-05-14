@@ -3204,17 +3204,7 @@ static void cxd56_swap_buffer_rl(uint32_t addr, uint16_t size)
     }
 }
 
-static void send_message_underrun(struct cxd56_dev_s *dev)
-{
-  struct audio_msg_s msg;
-
-  msg.msg_id = AUDIO_MSG_UNDERRUN;
-  msg.u.ptr = NULL;
-  dev->dev.upper(dev->dev.priv, AUDIO_CALLBACK_MESSAGE,
-                 (struct ap_buffer_s *)&msg, OK);
-}
-
-static int cxd56_start_dma(struct cxd56_dev_s *dev)
+static int cxd56_start_dma(FAR struct cxd56_dev_s *dev)
 {
   struct ap_buffer_s *apb;
   irqstate_t flags;
@@ -3240,14 +3230,11 @@ static int cxd56_start_dma(struct cxd56_dev_s *dev)
       spin_unlock_irqrestore(&dev->lock, flags);
       ret = cxd56_stop_dma(dev);
       flags = spin_lock_irqsave(&dev->lock);
-      audwarn("STOP DMA due to underrun\n");
       if (ret != CXD56_AUDIO_ECODE_OK)
         {
           auderr("ERROR: Could not stop DMA transfer (%d)\n", ret);
           dev->running = false;
         }
-
-      send_message_underrun(dev);
 
       dev->state = CXD56_DEV_STATE_BUFFERING;
     }
