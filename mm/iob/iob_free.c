@@ -179,7 +179,18 @@ FAR struct iob_s *iob_free(FAR struct iob_s *iob)
   sched_lock();
 
   nxsem_post(&g_iob_sem);
+
+#ifdef CONFIG_DEBUG_ASSERTIONS
+#if 1
+  if (g_iob_sem.semcount > CONFIG_IOB_NBUFFERS)
+    {
+      _err("*** g_iob_sem.semcount=%d \n", g_iob_sem.semcount);
+      DEBUGASSERT(false);
+    }
+#else
   DEBUGASSERT(g_iob_sem.semcount <= CONFIG_IOB_NBUFFERS);
+#endif
+#endif
 
 #if CONFIG_IOB_THROTTLE > 0
   flags = spin_lock_irqsave(&g_iob_lock);
