@@ -185,13 +185,21 @@ static int shmfs_release(FAR struct inode *inode)
    * The inode is released after this call, hence checking if i_crefs <= 1.
    */
 
-  if (inode->i_parent == NULL && atomic_load(&inode->i_crefs) <= 1)
+  int ret = inode_lock();
+  if (ret >= 0)
     {
-      shmfs_free_object(inode->i_private);
-      inode->i_private = NULL;
+      if (inode->i_parent == NULL &&
+          inode->i_crefs <= 1)
+        {
+          shmfs_free_object(inode->i_private);
+          inode->i_private = NULL;
+          ret = OK;
+        }
+
+      inode_unlock();
     }
 
-  return OK;
+  return ret;
 }
 
 /****************************************************************************
@@ -255,13 +263,20 @@ static int shmfs_truncate(FAR struct file *filep, off_t length)
 #ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 static int shmfs_unlink(FAR struct inode *inode)
 {
-  if (atomic_load(&inode->i_crefs) <= 1)
+  int ret = inode_lock();
+
+  if (ret >= 0)
     {
-      shmfs_free_object(inode->i_private);
-      inode->i_private = NULL;
+      if (inode->i_crefs <= 1)
+        {
+          shmfs_free_object(inode->i_private);
+          inode->i_private = NULL;
+        }
+
+      inode_unlock();
     }
 
-  return OK;
+  return ret;
 }
 #endif
 

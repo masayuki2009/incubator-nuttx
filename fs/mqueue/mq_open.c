@@ -74,7 +74,7 @@ static int nxmq_file_close(FAR struct file *filep)
 {
   FAR struct inode *inode = filep->f_inode;
 
-  if (atomic_load(&inode->i_crefs) <= 0)
+  if (inode->i_crefs <= 0)
     {
       FAR struct mqueue_inode_s *msgq = inode->i_private;
 
@@ -317,7 +317,7 @@ static int file_mq_vopen(FAR struct file *mq, FAR const char *mq_name,
 
       /* Set the initial reference count on this inode to one */
 
-      atomic_fetch_add(&inode->i_crefs, 1);
+      inode->i_crefs++;
 
       if (created)
         {
