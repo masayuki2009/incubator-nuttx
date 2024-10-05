@@ -32,7 +32,6 @@
 #include <nuttx/arch.h>
 #include <nuttx/spinlock.h>
 
-#include "sched/sched.h"
 #include "init/init.h"
 
 #include "intel64_lowsetup.h"
@@ -129,10 +128,7 @@ static int x86_64_ap_startup(int cpu)
 
 void x86_64_ap_boot(void)
 {
-  struct tcb_s *tcb = this_task();
   uint8_t cpu = 0;
-
-  UNUSED(tcb);
 
   /* Do some checking on CPU compatibilities at the top of this function */
 
@@ -157,7 +153,7 @@ void x86_64_ap_boot(void)
 #ifdef CONFIG_SCHED_INSTRUMENTATION
   /* Notify that this CPU has started */
 
-  sched_note_cpu_started(tcb);
+  sched_note_cpu_started(this_task());
 #endif
 
   sinfo("cpu=%d\n", cpu);
@@ -168,15 +164,6 @@ void x86_64_ap_boot(void)
   irq_attach(SMP_IPI_SCHED_IRQ, x86_64_smp_sched_handler, NULL);
   up_enable_irq(SMP_IPI_CALL_IRQ);
   up_enable_irq(SMP_IPI_SCHED_IRQ);
-
-#ifdef CONFIG_STACK_COLORATION
-  /* If stack debug is enabled, then fill the stack with a
-   * recognizable value that we can use later to test for high
-   * water marks.
-   */
-
-  x86_64_stack_color(tcb->stack_alloc_ptr, 0);
-#endif
 
   /* CPU ready */
 
