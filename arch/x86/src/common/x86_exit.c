@@ -70,7 +70,6 @@ void up_exit(int status)
    */
 
   nxsched_resume_scheduler(tcb);
-  g_running_tasks[this_cpu()] = tcb;
 
 #ifdef CONFIG_ARCH_ADDRENV
   /* Make sure that the address environment for the previously running

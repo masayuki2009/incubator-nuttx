@@ -70,9 +70,9 @@ void up_exit(int status)
 
   tcb = this_task();
 
-  /* Scheduler parameters will update inside syscall */
+  /* Reset scheduler parameters */
 
-  g_running_tasks[this_cpu()] = NULL;
+  nxsched_resume_scheduler(tcb);
 
   /* Then switch contexts */
 

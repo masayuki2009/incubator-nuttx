@@ -68,7 +68,7 @@ void up_exit(int status)
 
   /* Adjusts time slice for RR & SPORADIC cases */
 
-  g_running_tasks[this_cpu()] = NULL;
+  nxsched_resume_scheduler(tcb);
 
   /* Then switch contexts */
 
